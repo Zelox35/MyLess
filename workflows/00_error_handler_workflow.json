@@ -1,0 +1,40 @@
+{
+  "name": "00 - Global Hata Yakalayici (Error Trigger)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorData = $input.first().json;\nconsole.error('[Hata Yakalandı - n8n Global Handler]:', errorData);\n\nreturn {\n  json: {\n    success: false,\n    error: 'İş akışı yürütülürken bir hata meydana geldi.',\n    error_details: errorData.execution?.error?.message || 'Bilinmeyen hata',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "format-error",
+      "name": "Format Error Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

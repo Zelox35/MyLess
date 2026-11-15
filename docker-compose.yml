@@ -1,0 +1,57 @@
+services:
+  # ==========================================
+  # Yerel LLM Servisi - Ollama
+  # ==========================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - assistant-network
+    # GPU desteği olan sistemler için isteğe bağlı deploy bloğu:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ==========================================
+  # İş Akışı & Webhook Otomasyonu - n8n
+  # ==========================================
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Europe/Istanbul
+      - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+      - N8N_METRICS=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - assistant-network
+    depends_on:
+      - ollama
+
+networks:
+  assistant-network:
+    name: assistant-network
+    driver: bridge
+
+volumes:
+  ollama_data:
+    name: ollama_data
+  n8n_data:
+    name: n8n_data

@@ -1,0 +1,46 @@
+{
+  "name": "3 - Otomatik Test Olusturma Akisi (Generate Quiz)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-quiz",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-quiz",
+      "name": "Webhook - Quiz",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "assistant-generate-quiz"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst content = body.content || '';\nconst prompt = `Sen profesyonel bir üniversite sınav hazırlama yapay zekâsısın. Aşağıdaki ders notunu dikkatlice oku ve bu nottan EN AZ 5 ADET çoktan seçmeli (4 seçenekli A, B, C, D) test sorusu üret.\\n\\nCevabın kesinlikle ve yalnızca şu JSON şemasına uymak zorundadır:\\n{\\n  \"questions\": [\\n    {\\n      \"question\": \"Soru metni?\",\\n      \"options\": [\"Seçenek 1\", \"Seçenek 2\", \"Seçenek 3\", \"Seçenek 4\"],\\n      \"correct_answer\": \"Seçeneklerden biriyle birebir aynı doğru metin\",\\n      \"explanation\": \"Cevabın neden doğru olduğunun kısa pedagojik açıklaması\"\\n    }\\n  ]\\n}\\n\\nDers Notu İçeriği:\\n${content}`;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'http://ollama:11434/api/generate',\n  body: {\n    model: 'qwen2.5:3b',\n    format: 'json',\n    prompt: prompt,\n    stream: false\n  },\n  json: true\n});\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(response.response);\n} catch (e) {\n  parsed = { questions: [] };\n}\n\nlet questions = parsed.questions || [];\nquestions = questions.filter(q => q.question && Array.isArray(q.options) && q.options.length >= 2);\n\nreturn {\n  json: {\n    success: questions.length > 0,\n    count: questions.length,\n    questions: questions,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "quiz-processor",
+      "name": "Generate Quiz with Ollama",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Quiz": {
+      "main": [
+        [
+          {
+            "node": "Generate Quiz with Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

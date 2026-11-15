@@ -1,0 +1,54 @@
+# ==========================================
+# Myless - Root Git Ignore File
+# ==========================================
+
+# Flutter / Dart Build & Cache
+smart_study_assistant/build/
+smart_study_assistant/.dart_tool/
+smart_study_assistant/.flutter-plugins
+smart_study_assistant/.flutter-plugins-dependencies
+smart_study_assistant/.pub-cache/
+smart_study_assistant/.pub/
+smart_study_assistant/app.*.symbols
+smart_study_assistant/app.*.map.json
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Android Build & Local Configuration
+**/android/.gradle/
+**/android/local.properties
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+*.apk
+*.aab
+
+# IDE & Editor Configuration
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.fleet/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Environment & Credentials (Secrets)
+.env
+*.key
+*.keystore
+*.jks
+
+# Internal AI / Scratch Files
+.agents/
+scratch/
+tmp/
+*.log

@@ -1,0 +1,46 @@
+{
+  "name": "4 - Performans Degerlendirme ve Oneri Akisi (Evaluate Quiz)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evaluate-quiz",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-evaluate",
+      "name": "Webhook - Evaluate",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "assistant-evaluate-quiz"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst questions = body.questions || [];\nconst userAnswers = body.user_answers || [];\n\nlet correctCount = 0;\nlet wrongCount = 0;\nconst detailedResults = [];\nconst wrongQuestionsList = [];\n\nquestions.forEach((q, index) => {\n  const userAnsObj = userAnswers.find(a => a.question_index === index);\n  const selectedOption = userAnsObj ? userAnsObj.selected_option : null;\n  const isCorrect = selectedOption === q.correct_answer;\n\n  if (isCorrect) {\n    correctCount++;\n  } else {\n    wrongCount++;\n    wrongQuestionsList.push({\n      question: q.question,\n      wrong_selected: selectedOption || 'Cevaplanmadı',\n      correct_answer: q.correct_answer,\n      explanation: q.explanation || ''\n    });\n  }\n\n  detailedResults.push({\n    question_index: index,\n    question: q.question,\n    selected_option: selectedOption,\n    correct_answer: q.correct_answer,\n    is_correct: isCorrect,\n    explanation: q.explanation || ''\n  });\n});\n\nconst totalQuestions = questions.length;\nconst score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;\n\nlet recommendationText = '';\nif (wrongCount === 0 && totalQuestions > 0) {\n  recommendationText = 'Harika bir başarı! Tüm soruları eksiksiz doğru yanıtladınız. Bu konuyu mükemmel kavramışsınız, bir sonraki üniteye güvenle geçebilirsiniz.';\n} else {\n  const prompt = `Sen motive edici bir eğitim danışmanı yapay zekâsısın. Bir öğrenci çözdüğü testte ${totalQuestions} sorudan ${correctCount} doğru, ${wrongCount} yanlış yaptı (Puan: ${score}). Yanlış yaptığı sorular ve konular: ${JSON.stringify(wrongQuestionsList)}. Öğrenciye eksik olduğu bu özel konulara yönelik yapıcı, motive edici ve nokta atışı 2-3 cümlelik bir çalışma tavsiyesi ve konu tekrar önerisi yaz. Yalnızca Türkçe tavsiye metnini döndür.`;\n\n  const ollamaRes = await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'http://ollama:11434/api/generate',\n    body: {\n      model: 'qwen2.5:3b',\n      prompt: prompt,\n      stream: false\n    },\n    json: true\n  });\n\n  recommendationText = (ollamaRes.response || '').trim() || 'Eksik olduğunuz konuları pekiştirmek için ders notlarını tekrar gözden geçirmeniz önerilir.';\n}\n\nreturn {\n  json: {\n    success: true,\n    total_questions: totalQuestions,\n    correct_count: correctCount,\n    wrong_count: wrongCount,\n    score: score,\n    detailed_results: detailedResults,\n    recommendations: recommendationText,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "evaluation-processor",
+      "name": "Evaluate & Recommend with Ollama",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Evaluate": {
+      "main": [
+        [
+          {
+            "node": "Evaluate & Recommend with Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

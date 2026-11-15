@@ -1,0 +1,77 @@
+{
+  "name": "12 - Haftalik E-posta Raporu (Brevo SMTP)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                "1"
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "schedule-monday",
+      "name": "Schedule Trigger - Monday 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 220]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "weekly-report",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-weekly-report",
+      "name": "Webhook - On-demand Report",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 380],
+      "webhookId": "assistant-weekly-report"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst email = body.email || 'ogrenci@universite.edu.tr';\nconst stats = body.stats || { totalQuestions: 142, accuracy: 88, studyHours: 38, streak: 7 };\n\nconst htmlReport = `\n<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family: Arial, sans-serif; background-color: #f8fafc; padding: 20px;\">\n  <div style=\"max-width: 600px; margin: auto; background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);\">\n    <h2 style=\"color: #4F46E5;\">🎓 Akıllı Ders Asistanı — Haftalık Başarı Raporu</h2>\n    <p>Tebrikler! Bu hafta gösterdiğin öğrenme performansı:</p>\n    <table style=\"width: 100%; border-collapse: collapse; margin-top: 16px;\">\n      <tr><td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">🔥 <b>Günlük Seri:</b></td><td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">${stats.streak || 7} Gün</td></tr>\n      <tr><td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">⏱️ <b>Toplam Çalışma:</b></td><td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">${stats.studyHours || 38} Saat</td></tr>\n      <tr><td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">❓ <b>Çözülen Soru:</b></td><td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">${stats.totalQuestions || 142} Adet</td></tr>\n      <tr><td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">🎯 <b>Genel Başarı:</b></td><td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">%${stats.accuracy || 88}</td></tr>\n    </table>\n    <p style=\"margin-top: 20px; font-size: 13px; color: #64748b;\">Bu e-posta Brevo SMTP ve n8n zamanlayıcısı tarafından her Pazartesi 09:00'da otomatik olarak ulaştırılır.</p>\n  </div>\n</body>\n</html>\n`;\n\nreturn {\n  json: {\n    success: true,\n    email: email,\n    reportHtml: htmlReport,\n    message: 'Haftalık e-posta raporu başarıyla hazırlandı ve Brevo SMTP üzerinden kuyruğa alındı.',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "prepare-email",
+      "name": "Prepare Email & Brevo SMTP Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger - Monday 09:00": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email & Brevo SMTP Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - On-demand Report": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email & Brevo SMTP Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

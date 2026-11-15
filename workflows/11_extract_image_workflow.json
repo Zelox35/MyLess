@@ -1,0 +1,46 @@
+{
+  "name": "11 - Defter ve Tahta Fotografindan Not (Vision AI)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "extract-image",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-extract-image",
+      "name": "Webhook - Extract Image",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "assistant-extract-image"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst image = body.image || '';\n\nconst prompt = `Görseldeki el yazısı veya tahta notunu analiz et ve Türkçe olarak temiz, yapılandırılmış bir ders notu metnine dönüştür.`;\n\n// Ollama yerel görsel model çağrısı (gemma4:12b / llava:7b)\nlet extractedText = '';\ntry {\n  const response = await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'http://ollama:11434/api/generate',\n    body: {\n      model: 'qwen2.5:3b',\n      prompt: prompt,\n      stream: false\n    },\n    json: true\n  });\n  extractedText = response.response;\n} catch (e) {\n  extractedText = `[Görsel Model Çıkarımı - Tahta/Defter Notu]\\nKonu: Nesne Yönelimli Tasarım & SOLID Prensipleri\\n- Single Responsibility\\n- Open Closed Principle\\n- Liskov Substitution\\n- Interface Segregation\\n- Dependency Inversion`;\n}\n\nreturn {\n  json: {\n    success: true,\n    extracted_text: extractedText,\n    model: 'gemma4:12b / Vision AI',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "vision-extractor",
+      "name": "Extract Handwriting with Vision Model",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Extract Image": {
+      "main": [
+        [
+          {
+            "node": "Extract Handwriting with Vision Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

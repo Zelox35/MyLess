@@ -1,0 +1,46 @@
+{
+  "name": "1 - Soru Cevap Akisi (Chat)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-chat",
+      "name": "Webhook - Chat",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "assistant-chat"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst course = body.course || 'Genel';\nconst message = body.message || 'Merhaba';\nconst prompt = `Sen üniversite öğrencilerine rehberlik eden Akıllı Bir Ders Asistanısın. Öğrencinin seçtiği ders: ${course}. Soru: ${message}. Soruyu açık, pedagojik, net ve Türkçe olarak yanıtla.`;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'http://ollama:11434/api/generate',\n  body: {\n    model: 'qwen2.5:3b',\n    prompt: prompt,\n    stream: false\n  },\n  json: true\n});\n\nreturn {\n  json: {\n    success: true,\n    reply: (response.response || '').trim(),\n    course: course,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "chat-processor",
+      "name": "Process Chat with Ollama",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Chat": {
+      "main": [
+        [
+          {
+            "node": "Process Chat with Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "name": "10 - Ezber Kartlari Uretici (Flashcards SM-2)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "flashcards",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-flashcards",
+      "name": "Webhook - Flashcards",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "assistant-flashcards"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst course = body.course || 'Genel';\nconst content = body.content || '';\nconst count = body.count || 5;\n\nconst prompt = `Aşağıdaki ders notundan öğrencilerin SM-2 aralıklı tekrar yöntemiyle ezberlemesi için ${count} adet soru-cevap bilgi kartı (flashcard) üret.\\n\\nNot: ${content}\\n\\nÇıktıyı YALNIZCA şu JSON şemasında ver:\\n{\\n  \"cards\": [\\n    {\\n      \"topic\": \"Konu Başlığı\",\\n      \"question\": \"Soru veya Kavram\",\\n      \"answer\": \"Net ve anlaşılır açıklama\"\\n    }\\n  ]\\n}`;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'http://ollama:11434/api/generate',\n  body: {\n    model: 'qwen2.5:3b',\n    prompt: prompt,\n    format: 'json',\n    stream: false\n  },\n  json: true\n});\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(response.response);\n} catch (e) {\n  parsed = { cards: [] };\n}\n\nreturn {\n  json: {\n    success: true,\n    course: course,\n    cards: (parsed.cards || []).map((c, i) => ({\n      id: `${Date.now()}_${i}`,\n      course: course,\n      topic: c.topic || 'Genel Kavram',\n      question: c.question,\n      answer: c.answer,\n      repetitions: 0,\n      interval: 1,\n      ease_factor: 2.5\n    }))\n  }\n};"
+      },
+      "id": "generate-flashcards-code",
+      "name": "Generate Flashcards with Ollama",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Flashcards": {
+      "main": [
+        [
+          {
+            "node": "Generate Flashcards with Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

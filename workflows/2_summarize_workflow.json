@@ -1,0 +1,46 @@
+{
+  "name": "2 - Ders Notu Ozetleme Akisi (Summarize)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "summarize",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-summarize",
+      "name": "Webhook - Summarize",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "assistant-summarize"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst title = body.title || 'Ders Notu Özeti';\nconst content = body.content || '';\nconst prompt = `Sen uzman bir eğitimci ve not özetleme asistanısın. Aşağıdaki ders notunu oku ve sadece şu JSON formatında yanıt ver:\n{\n  \"summary\": \"Ders notunun akıcı ve kapsamlı 2-4 cümlelik Türkçe özeti\",\n  \"bullet_points\": [\"En kritik 1. bilgi maddesi\", \"En kritik 2. bilgi maddesi\", \"En kritik 3. bilgi maddesi\"],\n  \"key_topics\": [\"Konu 1\", \"Konu 2\", \"Konu 3\"]\n}\n\nDers Notu İçeriği:\n${content}`;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'http://ollama:11434/api/generate',\n  body: {\n    model: 'qwen2.5:3b',\n    format: 'json',\n    prompt: prompt,\n    stream: false\n  },\n  json: true\n});\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(response.response);\n} catch (e) {\n  parsed = {\n    summary: response.response,\n    bullet_points: [],\n    key_topics: []\n  };\n}\n\nreturn {\n  json: {\n    success: true,\n    title: title,\n    summary: parsed.summary || 'Özet oluşturulamadı.',\n    bullet_points: parsed.bullet_points || [],\n    key_topics: parsed.key_topics || [],\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "summarize-processor",
+      "name": "Process Summary with Ollama",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Summarize": {
+      "main": [
+        [
+          {
+            "node": "Process Summary with Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

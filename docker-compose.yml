@@ -12,7 +12,7 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - assistant-network
-    # GPU desteği olan sistemler için isteğe bağlı deploy bloğu:
+    # GPU destegi olan sistemler icin:
     # deploy:
     #   resources:
     #     reservations:
@@ -22,7 +22,28 @@ services:
     #           capabilities: [gpu]
 
   # ==========================================
-  # İş Akışı & Webhook Otomasyonu - n8n
+  # Ollama Model Yukleyici (otomatik)
+  # ==========================================
+  ollama-setup:
+    image: ollama/ollama:latest
+    container_name: ollama-setup
+    entrypoint: >
+      /bin/sh -c "
+        sleep 8;
+        echo '>>> qwen2.5:3b modeli kontrol ediliyor...';
+        ollama pull qwen2.5:3b;
+        echo '>>> Model hazir!';
+      "
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    networks:
+      - assistant-network
+    depends_on:
+      - ollama
+    restart: "no"
+
+  # ==========================================
+  # Is Akisi & Webhook Otomasyonu - n8n
   # ==========================================
   n8n:
     image: docker.n8n.io/n8nio/n8n:latest
@@ -40,10 +61,42 @@ services:
       - N8N_DIAGNOSTICS_ENABLED=false
     volumes:
       - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows
     networks:
       - assistant-network
     depends_on:
       - ollama
+
+  # ==========================================
+  # n8n Workflow Yukleyici (otomatik)
+  # ==========================================
+  n8n-setup:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n-setup
+    entrypoint: >
+      /bin/sh -c "
+        sleep 15;
+        echo '>>> n8n workflow import basliyor...';
+        n8n import:workflow --input=/workflows/00_error_handler_workflow.json || true;
+        n8n import:workflow --input=/workflows/1_chat_workflow.json || true;
+        n8n import:workflow --input=/workflows/2_summarize_workflow.json || true;
+        n8n import:workflow --input=/workflows/3_generate_quiz_workflow.json || true;
+        n8n import:workflow --input=/workflows/4_evaluate_quiz_workflow.json || true;
+        n8n import:workflow --input=/workflows/10_flashcards_workflow.json || true;
+        n8n import:workflow --input=/workflows/11_extract_image_workflow.json || true;
+        n8n import:workflow --input=/workflows/12_weekly_report_workflow.json || true;
+        echo '>>> Tum workflow'"'"'lar yuklendi!';
+      "
+    environment:
+      - N8N_USER_FOLDER=/home/node/.n8n
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows
+    networks:
+      - assistant-network
+    depends_on:
+      - n8n
+    restart: "no"
 
 networks:
   assistant-network:

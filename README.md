@@ -164,62 +164,40 @@ flowchart LR
 
 ### Adım 1: Projeyi İndirin
 ```bash
-git clone https://github.com/kullanici-adi/Myless.git
-cd Myless
+git clone https://github.com/Zelox35/MyLess.git
+cd MyLess
 ```
 
----
+### Adım 2: Arka Ucu İlk Kez Kurun ve Başlatın
+Proje ana dizinindeyken aşağıdaki komut, Docker servislerini başlatır; `qwen2.5:3b` modelini ve n8n iş akışlarını hazırlar.
 
-### Adım 2: Docker ile Arka Uç Servislerini Başlatın
-Proje ana dizininde n8n ve Ollama servislerini arka planda ayağa kaldırın:
+**Windows PowerShell:**
+```powershell
+.\scripts\setup.bat
+```
 
+**Windows Komut İstemi:**
+```cmd
+scripts\setup.bat
+```
+
+**Linux / macOS:**
+```bash
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+```
+
+İlk kurulumda model indirme işlemi internet hızınıza bağlı olarak birkaç dakika sürebilir. Kurulum tamamlandığında:
+- **n8n Arayüzü:** `http://localhost:5678`
+- **Ollama API:** `http://localhost:11434`
+
+### Sonraki Başlatmalar
+Bilgisayar yeniden başladıktan sonra arka ucu proje ana dizininden şu komutla başlatın:
 ```bash
 docker compose up -d
 ```
 
-Servislerin sağlıklı çalıştığını doğrulayın:
-```bash
-docker ps
-```
-- **n8n Arayüzü:** `http://localhost:5678`
-- **Ollama API:** `http://localhost:11434`
-
----
-
-### Adım 3: Yerel Dil Modelini İndirin
-
-**Windows için:**
-```cmd
-scripts\setup-model.bat
-```
-
-**Linux / macOS için:**
-```bash
-chmod +x scripts/setup-model.sh
-./scripts/setup-model.sh
-```
-
-*(Doğrudan Docker komutu ile çalıştırmak isterseniz: `docker exec -it ollama ollama pull qwen2.5:3b`)*
-
----
-
-### Adım 4: n8n İş Akışlarını (Workflows) Aktarın
-
-1. Tarayıcınızdan `http://localhost:5678` adresine gidin.
-2. Sol menüden **Workflows -> Add Workflow -> Import from file** seçeneğini seçin.
-3. `workflows/` klasöründeki JSON akışlarını içe aktarın ve sağ üstten **Active** konumuna getirin:
-   - `1_chat_workflow.json` (Sohbet & Soru-Cevap)
-   - `2_summarize_workflow.json` (Not Özetleyici & RAG Parçalama)
-   - `3_generate_quiz_workflow.json` (Çoktan Seçmeli Test Üretici)
-   - `4_evaluate_quiz_workflow.json` (Değerlendirme & Kişisel Tavsiye)
-   - `10_flashcards_workflow.json` (SM-2 Ezber Kartları)
-   - `11_extract_image_workflow.json` (Defter & Tahta Fotoğrafı Analizi)
-   - `12_weekly_report_workflow.json` (Haftalık E-Posta Karnesi)
-   - `00_error_handler_workflow.json` (Merkezi Hata Yakalama)
-
----
-
-### Adım 5: Flutter Mobil Uygulamasını Çalıştırın
+### Adım 3: Flutter Uygulamasını Çalıştırın
 
 ```bash
 cd smart_study_assistant
@@ -227,10 +205,19 @@ flutter pub get
 flutter run
 ```
 
+`flutter run` bağlı emülatör/cihazı otomatik seçer. Android emülatörünü açıkça seçmek için `flutter devices` ile cihaz kimliğini kontrol edip `flutter run -d <cihaz-kimliği>` kullanın.
+
 > 💡 **Ağ Ayarları İpucu:**
 > - **Android Emülatör** kullanıyorsanız varsayılan backend adresi `http://10.0.2.2:5678/webhook` olarak ayarlanmıştır.
 > - **Fiziksel Android / iOS Cihaz** kullanıyorsanız, bilgisayarınızın yerel ağ IP'sini (örn: `http://192.168.1.50:5678/webhook`) uygulama içindeki **Ayarlar** ekranından tanımlayabilirsiniz.
 > - **Masaüstü (Windows / macOS) / Web** için: `http://localhost:5678/webhook`
+
+### Servisleri Durdurun
+Proje ana dizininde:
+```bash
+docker compose down
+```
+Bu komut konteynerleri durdurur; indirilmiş model ve n8n verilerini Docker volume'larında korur.
 
 ---
 

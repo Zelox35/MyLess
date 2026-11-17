@@ -10,18 +10,19 @@ echo [1/4] Docker servisleri baslatiliyor...
 docker compose up -d
 if errorlevel 1 (
     echo HATA: Docker Compose baslamiyor. Docker Desktop acik mi?
-    pause & exit /b 1
+    pause
+    exit /b 1
 )
 
 echo.
-echo [2/4] n8n ve Ollama hazir olana kadar bekleniyor (30 sn)...
+echo [2/4] n8n ve Ollama hazir olana kadar bekleniyor ^(30 sn^)...
 timeout /t 30 /nobreak >nul
 
 echo.
 echo [3/4] Ollama modeli kontrol ediliyor...
 docker exec ollama ollama list | findstr "qwen2.5:3b" >nul 2>&1
 if errorlevel 1 (
-    echo Model bulunamadi, indiriliyor (ilk kurulum ~2 GB)...
+    echo Model bulunamadi, indiriliyor ^(ilk kurulum ~2 GB^)...
     docker exec ollama ollama pull qwen2.5:3b
 ) else (
     echo Model zaten yuklu, atlaniyor.
